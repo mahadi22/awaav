@@ -13,15 +13,39 @@ Thank you. 💖
 - Download 1 of the browser driver, firefox or chrome;                  
   - Chrome Driver; https://sites.google.com/a/chromium.org/chromedriver/downloads (OR)                
   - Firefox (Gecko) Driver; https://github.com/mozilla/geckodriver/releases                
-- Selenium; how to install in python, python -m pip install -U selenium             
-- BeautifulSoup4; how to install in python, python -m pip install -U beautifulsoup4                         
+- Selenium module for python3;             
+- BeautifulSoup4 module for python3;         
 
 
 ## ⏩How to install the script                          
 1. Go to folder where python are install
 2. create a new folder and rename it to awaav or something else
 3. extract the driver and awwav script to this new folder
-4. run the script from cmd or using batch file
+4. install Selenium module with cmd/command prompt/terminal, 
+   ```
+   python -m pip install selenium
+   or
+   pip3 install selenium
+   ```
+   if the module already installed and need updates
+   ```
+   python -m pip install -U selenium
+   or
+   pip3 install -U selenium
+   ```
+5. install beautifulsoup4 module with cmd/command prompt/terminal,
+   ```
+   python -m pip install -U beautifulsoup4
+   or
+   pip3 install beautifulsoup4
+   ```
+   if the module already installed and need updates
+   ```
+   python -m pip install -U beautifulsoup4
+   or
+   pip3 install -U beautifulsoup4
+   ```
+6. run the script from cmd or using batch file
 
 
 ## ⏩How to use the script                          

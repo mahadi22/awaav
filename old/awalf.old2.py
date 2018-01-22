@@ -6,6 +6,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import ElementNotVisibleException
 from bs4 import BeautifulSoup
+import argparse
 import re
 import time
 from random import randint
@@ -16,8 +17,11 @@ import os
 # Main url and the regular expression to match against it.
 # The subdomain can change according to region, and could be:
 # latam.alienwarearena.com, eu.alienwarearena.com etc
-mainURL = 'https://na.alienwarearena.com'
+mainURL = 'https://www.alienwarearena.com'
 mainURLRegex = 'https:\/\/(\S+)\.alienwarearena\.com\/'
+
+# parsed main args
+args = None
 
 # the driver that will emulate user interactions in the browser
 driver = None
@@ -26,32 +30,62 @@ user = ''
 password = ''
 total_threads = 0
 total_votes = 0
-#total_this_that = 0
+
+def parse_arguments():
+    parser = argparse.ArgumentParser('awalf.py')
+
+    # condition to check the driver argument
+    def checkDriver(arg_driver):
+        if arg_driver.lower() != 'chrome' and arg_driver.lower() != 'firefox':
+            raise argparse.ArgumentTypeError('must be either chrome or firefox')
+
+        return arg_driver
+
+    def checkUnsignedInt(arg_uint):
+        error = 'must be an integer greater than 0'
+
+        try:
+            number = int(arg_uint)
+        except ValueError:
+            raise argparse.ArgumentTypeError(error)
+
+        if number < 1:
+            raise argparse.ArgumentTypeError(error)
+
+        return number
+
+    parser.add_argument('--username', type=str, help='Login username')
+    parser.add_argument('--password', type=str, help='Login password')
+    parser.add_argument('--driver', type=checkDriver, help='The driver to be used: \'chrome\' (default) or \'firefox\'')
+    parser.add_argument('--max-pages', type=checkUnsignedInt, help='The maximum topic pages to crawl into')
+    parser.add_argument('--post-count', type=checkUnsignedInt, help='How many posts to submit from the posts.txt file')
+
+    global args
+    args = parser.parse_args()
 
 def init_driver():
     print('Starting driver...')
 
-    newDriver = None
+    global driver
+
     dir_files = os.listdir()
 
-    if len(sys.argv) > 1:
-        if sys.argv[1].lower() == 'firefox':
+    if args.driver:
+        if args.driver.lower() == 'firefox':
             if 'geckodriver.exe' not in dir_files:
                 raise Exception('Firefox driver not found')
 
-            newDriver = webdriver.Firefox()                                  
+            driver = webdriver.Firefox()                                  
                 
-    if newDriver is None:
+    if driver is None:
         if 'chromedriver.exe' not in dir_files:
             raise Exception('Chrome driver not found')
 
-        newDriver = webdriver.Chrome()                
+        driver = webdriver.Chrome()                
 
-    newDriver.wait = WebDriverWait(newDriver, 120) # wait object that waits (you don't say?) for elements to appear
+    driver.wait = WebDriverWait(driver, 120) # wait object that waits (you don't say?) for elements to appear
     
-    print('Driver "' + newDriver.name + '" started.\n')
-
-    return newDriver
+    print('Driver "' + driver.name + '" started.\n')
 
 def check_page_error(soup):
     errorElement = soup.find('h3', class_='text-error')
@@ -93,10 +127,17 @@ def login():
         input_pass = driver.wait.until(EC.presence_of_element_located((By.NAME, '_password')))
         bt_login = driver.wait.until(EC.element_to_be_clickable((By.NAME, '_login')))
 
-        user = input('username: ')
-        password = getpass.getpass('password: ')
-        #user = user1
-        #password = getpass.getpass(password1)		
+        if args.username:
+            user = args.username
+        else:
+            user = input('Username: ')
+        
+        password = ''
+
+        if args.password:
+            password = args.password
+        else:
+            password = getpass.getpass('Password: ')
 
         input_user.send_keys(user)
         input_pass.send_keys(password)
@@ -141,14 +182,12 @@ def print_status():
     # find daily tasks numbers
     global total_threads
     global total_votes
-    #global total_this_that
 
     # the ARP box is a folding div that contains all points earned on the current day
     arp_box = soupMain.find('div', id='arp-toast')
     arp_rows = arp_box.find_all('tr')
     threads = arp_rows[1].find(class_='text-center')
     votes = arp_rows[2].find(class_='text-center')
-    #this_that = arp_rows[3].find(class_='text-center')
 
     # extract numbers from status fields
     level_num = re.findall('\d+', level.text)[0]
@@ -156,14 +195,12 @@ def print_status():
     points_num = re.findall('\d+', points.text)[0]
     total_threads = int(re.findall('\d+', threads.text)[0])
     total_votes = int(re.findall('\d+', votes.text)[0])
-    #total_this_that = int(re.findall('\d+', this_that.text)[0])
 
     print('---------- STATUS ----------')
     print('Your level: ' + level_num)
     print('Total points: ' + points_num + ' (' + remaining_num + ' remaining to next level)\n')
     print('Threads created: ' + str(total_threads))
     print('Votes cast: ' + str(total_votes))
-    #print('This or That votes: ' + str(total_this_that))
     print('---------- STATUS ----------\n')
 
 def vote_on_content():
@@ -208,6 +245,11 @@ def vote_on_content():
             next_page = pagination.find('li', class_='next')
             pagination_total = next_page.previous_sibling.find('a')
             page_count = int(pagination_total.text)
+
+            # check if the max-pages argument was passed and assign a limit to the page count if it is a lesser number
+            if args.max_pages:
+                if args.max_pages < page_count:
+                    page_count = args.max_pages
 
         for page_index in range(0, page_count):
             if check_total_votes(): break
@@ -262,106 +304,56 @@ def vote_on_content():
 
     print('Done! All votes cast')
 
-def vote_on_this_or_that():
-    has_chosen1 = False
-    choice1 = ''
-
-    while not has_chosen1:
-        choice1 = input('Do you want to skip this or that? (y/n) ')
-        has_chosen1 = (choice1 == 'y' or choice1 == 'n')
-
-    if choice1 == 'y': return
-	
-    def check_total_tt_votes():
-        return (total_this_that >= 25)
-
-    if check_total_tt_votes():
-        print('All This or That votes already cast')
-        return
-	
-    print('Voting on This or That...')
-
-    # enter and parse the This or That forum
-    soupTT = enter_and_parse_url(mainURL + '/forums/board/293/this-or-that')
-    print('- Entered This or That forum')
-
-    # get the link to the first post
-    topic_link = soupTT.find('a', class_='board-topic-title')['href']
-    soupTT = enter_and_parse_url(mainURL + topic_link)
-    print('- Entered first This or That topic')
-
-    global total_this_that
-
-    # This will determine if, after a page refresh, the ToT totals really reached the limit.
-    # This is needed because voting on ToT is based on clicking on the vote button in 
-    # a time interval. The time interval may not be enough for the voting click to load 
-    # the next button, so it's not guaranteed all votes will be cast
-    all_tt_on_refresh = False
-
-    while not all_tt_on_refresh:
-        # find, scroll to and click the "start voting now" button
-        bt_start = driver.wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a.btn.btn-primary.btn-show-vote')))
-        driver.execute_script('arguments[0].scrollIntoView(false);', bt_start);
-        driver.execute_script('window.scrollTo(0, window.scrollY + ' + str(150) + ')')
-        bt_start.click()
-
-        print('-- Now voting...')
-
-        while not check_total_tt_votes():
-            img_vote = driver.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.img.pull-right')))
-            
-            if driver.name == 'firefox':
-                driver.execute_script('arguments[0].scrollIntoView(false);', img_vote);
-                driver.execute_script('window.scrollTo(0, window.scrollY + ' + str(150) + ')')
-            
-            hover = ActionChains(driver).move_to_element(img_vote)
-            hover.perform()
-            
-            time.sleep(1)
-            img_vote.click()
-
-            total_this_that += 1
-            time.sleep(5)
-
-        # now we need to check if all votes were really cast by refreshing the page and getting the status
-        soupTT = enter_and_parse_url(mainURL + topic_link)
-
-        arp_box = soupTT.find('div', id='arp-toast')
-        arp_rows = arp_box.find_all('tr')
-        this_that = arp_rows[3].find(class_='text-center')
-        total_this_that = int(re.findall('\d+', this_that.text)[0])
-
-        if total_this_that >= 25: all_tt_on_refresh = True
-
-    print('Done! All This or That votes cast')
-
+'''	
 def post_on_news_forum():
+    num_posts = 0
     has_chosen = False
     choice = ''
 
-    while not has_chosen:
-        choice = input('Do you want to post on news forum? (y/n) ')
-        has_chosen = (choice == 'y' or choice == 'n')
+    # check if the post-count was assigned, prompt the user if not
+    if args.post_count: 
+        num_posts = args.post_count
+    else:
+        while not has_chosen:
+            choice = input('Do you want to post on news forum? (y/n) ')
+            has_chosen = (choice == 'y' or choice == 'n')
 
-    if choice == 'n': return
+        if choice == 'n': return
 
-    has_chosen = False
-    num_posts = 0
-
-    while not has_chosen:
-        try:
-            num_posts = int(input('How many posts? '))
-        except ValueError:
-            print('Please, enter a number')
-        else:
-            if num_posts <= 0:
-                print('Please, enter a positive number')
+        has_chosen = False
+        
+        while not has_chosen:
+            try:
+                num_posts = int(input('How many posts? '))
+            except ValueError:
+                print('Please, enter a number')
             else:
-                has_chosen = True
+                if num_posts <= 0:
+                    print('Please, enter a positive number')
+                else:
+                    has_chosen = True
+  
+    while True:
+        has_chosen = False
+        choice = ''
+        
+        # open the posts file - and create it if it doesn't exist - and count how many lines are in it
+        file = open('posts.txt', 'a+')
+        file.seek(0)
+        file_lines = sum(1 for line in file)
 
-    # open the posts file and count how many lines are in it
-    file = open('posts.txt')
-    file_lines = sum(1 for line in file)
+        if file_lines == 0:
+            file.close()
+
+            print('!-- Warning: there are no lines in the "posts.txt" file. You need to write at least one line/sentence in this file to be able to post --!')
+            
+            while not has_chosen:
+                choice = input('If you just wrote at least one line in the file, input "y" to try again, or "n" to not post anything. Try again? (y/n) ')
+                has_chosen = (choice == 'y' or choice == 'n')
+
+            if choice == 'n': return
+        else:
+            break
     
     total_posts = 0
     current_news_page = 1
@@ -430,21 +422,22 @@ def post_on_news_forum():
 
     file.close()
     print('Done! All posts made')        
-
+'''
 # ---------- MAIN ----------
 
 if __name__ == '__main__':
     try:
-        driver = init_driver()
-
+        parse_arguments()
+        init_driver()
         login()
         print_status()
         vote_on_content()
-        vote_on_this_or_that()
         post_on_news_forum()
     
     except TimeoutException:
         print('Error: element could not be found due to load time limit reached')
+    except SystemExit:
+        pass
     except BaseException as e:
         print('Something went wrong: ' + str(e))
     finally:

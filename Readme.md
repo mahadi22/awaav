@@ -43,4 +43,4 @@ python "C:\Program Files\Python\Python36-32\awaav.py" --driver chrome --max-page
 
 
 
-Original script by [GabrielMDU](github.com/gabrielmdu/Alienware-Arena-Level-Farm)
+Original script created by [GabrielMDU](https://github.com/gabrielmdu/) but abandoned after [ARP 5.1 update](https://eu.alienwarearena.com/ucf/show/1813336/boards/gaming-news/News/arp-5-1), copy of the script are [here](/old).

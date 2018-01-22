@@ -1,4 +1,4 @@
-#version = 0.0.11
+#version = 0.1.5
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
@@ -17,7 +17,7 @@ import os
 
 # Main url and the regular expression to match against it.
 # The subdomain can change according to region, and could be:
-# latam.alienwarearena.com, eu.alienwarearena.com etc
+# na.alienwarearena.com, uk.alienwarearena.com, latam.alienwarearena.com etc
 mainURL = 'https://www.alienwarearena.com'
 mainURLRegex = 'https:\/\/(\S+)\.alienwarearena\.com\/'
 
@@ -189,13 +189,12 @@ def print_status():
     # the ARP box is a folding div that contains all points earned on the current day
     arp_box = soupMain.find('div', id='arp-toast')
     arp_rows = arp_box.find_all('tr')
-    baris1 = len(arp_rows)
-    baris2 = baris1 - 5
-    baris3 = baris1 - 6
-    barisnya1 = str(baris2)
-    barisnya2 = str(baris3)
-    votes = arp_rows[baris2].find(class_='text-center')
-    daily = arp_rows[baris3].find(class_='text-center')
+    total_rows = len(arp_rows)
+    votes = arp_rows[total_rows - 5].find(class_='text-center')
+    daily = arp_rows[total_rows - 6].find(class_='text-center')
+    if total_rows == 9 :
+        daily_quest = "You have 1 daily quest today."
+    else: daily_quest = "You have 2 or more daily quests today."
 
     # extract numbers from status fields
     level_num = re.findall('\d+', level.text)[0]
@@ -204,17 +203,17 @@ def print_status():
     total_votes = int(re.findall('\d+', votes.text)[0])
     total_daily = int(re.findall('\d+', daily.text)[0])
 	
-    print('---------- STATUS START----------')
-    print('Total row today: ' + str(baris1))
+    print('---------- STATUS START ----------')
+    print(time.strftime("Today date %d %B %Y"))
     print('Your level: ' + level_num)
     print('Total points: ' + points_num + ' (' + remaining_num + ' remaining to next level)')
     print('Total Daily Login: ' + str(total_daily))
     print('Votes cast: ' + str(total_votes))											 
-    print('---------- STATUS END ----------\n')
+    print(daily_quest)
+    print('----------  STATUS END  ----------\n')
 
 def vote_on_content():
     print('Voting on content~~~♪')
-
     global total_votes
 
     def check_total_votes():
@@ -226,18 +225,17 @@ def vote_on_content():
 
     # enter and parse the news forum
     soupNewsForum = enter_and_parse_url(mainURL + '/forums/board/458/gaming-news')
-    print('- Entered news forum')
+    print('- Entering news forum')
 
     # get the topics
     topics_table = soupNewsForum.find(class_='table-topic')
     table_rows = topics_table.find_all('tr')
 
-    # for every row (from the second one - first is header), get the first <a> - link to the forum thread
-    for row_number, row in enumerate(table_rows[1:], 1):
+    # for every row (from the fourth one - first 3 are pinned news), get the first <a> - link to the forum thread
+    for row_number, row in enumerate(table_rows[4:], 1):
         if check_total_votes(): break
 
         print('-- Entering news ' + str(row_number) + ': ')
-
         topic_link = row.find('a').get('href')
 
         # enter the topic and parse its content
@@ -332,7 +330,7 @@ if __name__ == '__main__':
     except BaseException as e:
         print('Something went wrong: ' + str(e))
     finally:
-        print('Exiting, bye~~~♪')
+        print('Exiting, bye~~~♪\n\n\n\n\n')
 
         if driver is not None:
             driver.quit()

@@ -1,4 +1,4 @@
-#version = 0.1.5
+#version = 0.1.6
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
@@ -12,8 +12,7 @@ import re
 import time
 from random import randint
 import getpass
-import sys
-import os
+import sys,inspect,os
 
 # Main url and the regular expression to match against it.
 # The subdomain can change according to region, and could be:
@@ -65,7 +64,8 @@ def init_driver():
 
     global driver
 
-    dir_files = os.listdir()
+    #dir_files = os.listdir()
+    dir_files = os.listdir(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
 
     if args.driver:
         if args.driver.lower() == 'firefox':

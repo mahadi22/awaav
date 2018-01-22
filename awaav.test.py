@@ -13,7 +13,7 @@ import time
 from random import randint
 import getpass
 import sys
-import os
+import inspect,os
 
 # Main url and the regular expression to match against it.
 # The subdomain can change according to region, and could be:
@@ -65,7 +65,8 @@ def init_driver():
 
     global driver
 
-    dir_files = os.listdir()
+    #dir_files = os.listdir()
+    dir_files = os.listdir(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
     print (dir_files)
 
     if args.driver:

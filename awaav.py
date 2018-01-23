@@ -1,4 +1,4 @@
-#version = 0.1.6
+#version = 0.1.8
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
@@ -29,7 +29,7 @@ driver = None
 total_votes = 0
 
 def parse_arguments():
-    parser = argparse.ArgumentParser('awalf.py')
+    parser = argparse.ArgumentParser('awaav.py')
 
     # condition to check the driver argument
     def checkDriver(arg_driver):
@@ -39,7 +39,7 @@ def parse_arguments():
         return arg_driver
 
     def checkUnsignedInt(arg_uint):
-        error = 'must be an integer greater than 0'
+        error = 'must be an number and greater than 0'
 
         try:
             number = int(arg_uint)
@@ -53,8 +53,8 @@ def parse_arguments():
 
     parser.add_argument('--username', type=str, help='Login username')
     parser.add_argument('--password', type=str, help='Login password')
-    parser.add_argument('--driver', type=checkDriver, help='The driver to be used: \'chrome\' (default) or \'firefox\'')
-    parser.add_argument('--max-pages', type=checkUnsignedInt, help='The maximum topic pages to crawl into')
+    parser.add_argument('--driver', type=checkDriver, help='The driver to be used: \'chrome\'(default) or \'firefox\'')
+    parser.add_argument('--max-pages', type=checkUnsignedInt, help='The maximum topic pages to crawl into before jump to next topic')
 
     global args
     args = parser.parse_args()
@@ -64,8 +64,7 @@ def init_driver():
 
     global driver
 
-    #dir_files = os.listdir()
-    dir_files = os.listdir(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
+    dir_files = os.listdir(os.path.abspath(os.path.dirname(sys.argv[0])))
 
     if args.driver:
         if args.driver.lower() == 'firefox':
@@ -80,7 +79,7 @@ def init_driver():
 
         driver = webdriver.Chrome()                
 
-    driver.wait = WebDriverWait(driver, 120) # wait object that waits (you don't say?) for elements to appear
+    driver.wait = WebDriverWait(driver, 30) # wait object that waits (you don't say?) for elements to appear
     
     print('Driver "' + driver.name + '" started. ♥\n')
 
@@ -183,7 +182,6 @@ def print_status():
     points = points_parent.find('strong')
 		
     # find daily tasks numbers
-    global total_threads
     global total_votes
        
     # the ARP box is a folding div that contains all points earned on the current day

@@ -215,7 +215,7 @@ def print_status():
     if counterPS == 0 :
 	    oldARP = arpTotal
 	    counterPS += 1
-    elif oldARP == arpTotal  : print('ARP Change: ' + str(int(arpTotal) - int(oldARP)))
+    elif oldARP != arpTotal  : print('ARP Change: ' + str(int(arpTotal) - int(oldARP)))
     print('----------  STATUS END  ----------\n')
 
 # ---------- MAIN ----------

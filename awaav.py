@@ -1,39 +1,39 @@
-#version = 0.1.8
+#version = 0.2.0.0
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import ElementNotVisibleException
 from bs4 import BeautifulSoup
-import argparse
-import re
-import time
+import argparse, re, time, getpass, sys,inspect,os
 from random import randint
-import getpass
-import sys,inspect,os
 
 # Main url and the regular expression to match against it.
 # The subdomain can change according to region, and could be:
-# na.alienwarearena.com, uk.alienwarearena.com, latam.alienwarearena.com etc
+# my.alienwarearena.com, uk.alienwarearena.com, latam.alienwarearena.com etc
 mainURL = 'https://www.alienwarearena.com'
 mainURLRegex = 'https:\/\/(\S+)\.alienwarearena\.com\/'
 
 # parsed main args
 args = None
 
+counterPS = 0
+oldARP = 0 
+total_votes = 0
+options = None
+
 # the driver that will emulate user interactions in the browser
 driver = None
-
-total_votes = 0
 
 def parse_arguments():
     parser = argparse.ArgumentParser('awaav.py')
 
     # condition to check the driver argument
     def checkDriver(arg_driver):
-        if arg_driver.lower() != 'chrome' and arg_driver.lower() != 'firefox':
+        if arg_driver.lower() != 'chrome' and arg_driver.lower() != 'firefox' :
             raise argparse.ArgumentTypeError('must be either chrome or firefox')
 
         return arg_driver
@@ -70,13 +70,17 @@ def init_driver():
         if args.driver.lower() == 'firefox':
             if 'geckodriver.exe' not in dir_files:
                 raise Exception('Firefox driver not found, place it on same folder with this script')
-
-            driver = webdriver.Firefox()                                  
-                
+            
+            options = Options()
+            options.set_headless(headless=True)
+            driver = webdriver.Firefox(firefox_options=options)
+			
+            #ffprofile = webdriver.FirefoxProfile(profileLoc)
+            #driver = webdriver.Firefox(ffprofile)                                  
+			
     if driver is None:
         if 'chromedriver.exe' not in dir_files:
             raise Exception('Chrome driver not found, place it on same folder with this script')
-
         driver = webdriver.Chrome()                
 
     driver.wait = WebDriverWait(driver, 30) # wait object that waits (you don't say?) for elements to appear
@@ -84,7 +88,7 @@ def init_driver():
     print('Driver "' + driver.name + '" started. ♥\n')
 
 def check_page_error(soup):
-    errorElement = soup.find('h3', class_='text-error')
+    errorElement = soup.find('h1', class_='content-title text-center')
     return (errorElement is not None)    
 
 def enter_and_parse_url(url):
@@ -149,7 +153,7 @@ def login():
         # element of the main page is present by setting a timer, so then we know we're logged in
         if driver.name == 'firefox':
             try:
-                WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'panel-arp-status')))
+                WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CLASS_NAME, 'toast-header')))
                 logged = True
             except TimeoutException:
                 print('!-- Wrong user/pass or site error --!\n')
@@ -166,6 +170,11 @@ def login():
    
 def print_status():
     print('Reading status~~~♫')
+    global counterPS
+    global oldARP
+    global total_votes1
+    odometer = 0
+    arpTotal = ""
 
     soupMain = BeautifulSoup(driver.page_source, 'html.parser')
 
@@ -174,142 +183,40 @@ def print_status():
         print('Error trying to access main page. Trying again...')
         soupMain = enter_and_parse_url(mainURL)
 
-    # find html elements for status
-    level_parent = soupMain.find(class_='media-heading')
-    level = level_parent.find('strong')
-    remaining = level_parent.find('i')
-    points_parent = level_parent.find_next_sibling('h5')
-    points = points_parent.find('strong')
-		
-    # find daily tasks numbers
-    global total_votes
-       
-    # the ARP box is a folding div that contains all points earned on the current day
+    userName = soupMain.find(class_='dropdown-header')
+    name_detail = re.findall('\w+', userName.text)[0]
+    arpLevel = soupMain.find(class_='arp-level')
+    level_num = re.findall('\d+', arpLevel.text)[0]
+    incQuest = soupMain.find(class_='incomplete-quests')
+    quest_num = re.findall('\d+', incQuest.text)[0]
     arp_box = soupMain.find('div', id='arp-toast')
     arp_rows = arp_box.find_all('tr')
+    arp_cols = arp_box.find_all("span", {"class": "odometer-value"})
     total_rows = len(arp_rows)
+    total_cols = len(arp_cols)
+    while odometer < total_cols :
+        arp_piece = arp_cols[odometer]
+        arpTotal = arpTotal + str(re.findall('\d+', arp_piece.text)[0])
+        odometer += 1
+    
     votes = arp_rows[total_rows - 5].find(class_='text-center')
     daily = arp_rows[total_rows - 6].find(class_='text-center')
-    if total_rows == 9 :
-        daily_quest = "You have 1 daily quest today."
-    else: daily_quest = "You have 2 or more daily quests today."
-
-    # extract numbers from status fields
-    level_num = re.findall('\d+', level.text)[0]
-    remaining_num = re.findall('\d+', remaining.text)[0]
-    points_num = re.findall('\d+', points.text)[0]
-    total_votes = int(re.findall('\d+', votes.text)[0])
+    total_votes1 = int(re.findall('\d+', votes.text)[0])
     total_daily = int(re.findall('\d+', daily.text)[0])
-	
+    
     print('---------- STATUS START ----------')
     print(time.strftime("Today date %d %B %Y"))
-    print('Your level: ' + level_num)
-    print('Total points: ' + points_num + ' (' + remaining_num + ' remaining to next level)')
+    print('Username: ' + str(name_detail))
+    print('Your Level: ' + str(level_num))
+    print('Total Arp: ' + str(arpTotal))
+    print('Incomplete Quest: ' + str(quest_num))
     print('Total Daily Login: ' + str(total_daily))
-    print('Votes cast: ' + str(total_votes))											 
-    print(daily_quest)
+    print('Votes cast: ' + str(total_votes1))
+    if counterPS == 0 :
+	    oldARP = arpTotal
+	    counterPS += 1
+    elif oldARP != arpTotal  : print('ARP Change: ' + str(int(arpTotal) - int(oldARP)))
     print('----------  STATUS END  ----------\n')
-
-def vote_on_content():
-    print('Voting on content~~~♪')
-    global total_votes
-
-    def check_total_votes():
-        return (total_votes >= 50)
-
-    if check_total_votes(): 
-        print('All votes already cast~~~♥')
-        return
-
-    # enter and parse the news forum
-    soupNewsForum = enter_and_parse_url(mainURL + '/forums/board/458/gaming-news')
-    print('- Entering news forum')
-
-    # get the topics
-    topics_table = soupNewsForum.find(class_='table-topic')
-    table_rows = topics_table.find_all('tr')
-
-    # for every row (from the fourth one - first 3 are pinned news), get the first <a> - link to the forum thread
-    for row_number, row in enumerate(table_rows[4:], 1):
-        if check_total_votes(): break
-
-        print('-- Entering news ' + str(row_number) + ': ')
-        topic_link = row.find('a').get('href')
-
-        # enter the topic and parse its content
-        soupTopic = enter_and_parse_url(mainURL + topic_link)
-
-        # number of comments pages 
-        page_count = 1
-
-        # check if there's an element "pagination" which indicates more than 10 comments
-        pagination = soupTopic.find('ul', class_='pagination')
-        next_page = None
-
-        if pagination is not None:
-            next_page = pagination.find('li', class_='next')
-            pagination_total = next_page.previous_sibling.find('a')
-            page_count = int(pagination_total.text)
-
-            # check if the max-pages argument was passed and assign a limit to the page count if it is a lesser number
-            if args.max_pages:
-                if args.max_pages < page_count:
-                    page_count = args.max_pages
-
-        for page_index in range(0, page_count):
-            if check_total_votes(): break
-
-            # if page is not the first, parse it
-            if page_index > 0:
-                soupTopic = BeautifulSoup(driver.page_source, 'html.parser')
-
-            # if there is any error in this page, go to the next news
-            if check_page_error(soupTopic): 
-                print('!-- Error on page. Going to the next news --!')
-                break    
-
-            # get the upvote buttons
-            upvotes = soupTopic.find_all(class_='post-up-vote')
-            votes_on_page = 0
-
-            for upvote in upvotes:
-                if check_total_votes(): break
-
-                item_up = upvote.find('i')
-                
-                if item_up.get('style') != 'color: gold;':
-                    bt_upvote = driver.wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[data-post-id=\'' + upvote.get('data-post-id') + '\'][title=\'Up Vote\']')))
-                    driver.execute_script('arguments[0].scrollIntoView(false);', bt_upvote);
-                    driver.execute_script('window.scrollTo(0, window.scrollY + ' + str(150) + ')')
-                    bt_upvote.click()
-
-                    total_votes += 1
-                    votes_on_page += 1
-
-            print('--- Votes on page ' + str(page_index + 1) + ': ' + str(votes_on_page))
-
-            if check_total_votes(): break
-            # if it's not the last page, go to the next
-            if (page_index < (page_count - 1)):
-                print('--- Going to comment page ' + str(page_index + 2))
-                bt_next_page = driver.wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.next a')))
-
-                # scroll to the next button (it will be on the bottom of the page) and then a little bit lower to be sure it will not be blocked by any element
-                driver.execute_script('arguments[0].scrollIntoView(false);', bt_next_page);
-                driver.execute_script('window.scrollTo(0, window.scrollY + ' + str(150) + ')')
-                
-                bt_next_page.click()
-
-                # wait for the next button to be active, then we know the comments were loaded
-                try:
-                    bt_number_next_page = driver.wait.until(EC.element_to_be_clickable((By.XPATH, "//ul[@class='pagination pagination-sm']/li[@class='active']/a[text()='" + str(page_index + 2) + "']")))
-                except TimeoutException:
-                    print('!-- Page ' + str(page_index + 2) + ' didn\'t load in time. Going to the next news...')
-                    break
-
-    print('Done! All votes cast~~~♥')
-    enter_and_parse_url(mainURL)
-    print_status()
 
 # ---------- MAIN ----------
 if __name__ == '__main__':
@@ -319,7 +226,7 @@ if __name__ == '__main__':
         init_driver()
         login()
         print_status()
-        vote_on_content()
+        #vote_on_content()
             
     except TimeoutException:
         print('Error: Element could not be found due to load time limit reached')
@@ -328,7 +235,7 @@ if __name__ == '__main__':
     except BaseException as e:
         print('Something went wrong: ' + str(e))
     finally:
-        print('Exiting, bye~~~♪\n\n\n\n\n')
+        print('Exiting, bye~~~♪\n\n\n')
 
-        if driver is not None:
+    if driver is not None:
             driver.quit()

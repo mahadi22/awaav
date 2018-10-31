@@ -1,4 +1,4 @@
-#version = 0.2.0.0
+#version = 0.2.0.4
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
@@ -17,9 +17,14 @@ from random import randint
 mainURL = 'https://www.alienwarearena.com'
 mainURLRegex = 'https:\/\/(\S+)\.alienwarearena\.com\/'
 
+# Location to your firefox profile with adblock/ublock on, keep the r in front of address location (r"address")
+profileLoc = (r"C:\Users\Mahadiputra\AppData\Roaming\Mozilla\Firefox\Profiles\sntxvjjq.Default User")
+
 # parsed main args
 args = None
 
+nTime = time.strftime("%a, %d %b %Y %H:%M:%S %z")
+teTime = None
 counterPS = 0
 oldARP = 0 
 total_votes = 0
@@ -58,6 +63,8 @@ def parse_arguments():
 
     global args
     args = parser.parse_args()
+    global nFile
+    nFile = (args.username + '.xml' )
 
 def init_driver():
     print('Starting driver~~~♫')
@@ -71,10 +78,12 @@ def init_driver():
             if 'geckodriver.exe' not in dir_files:
                 raise Exception('Firefox driver not found, place it on same folder with this script')
             
+            # headless
             options = Options()
             options.set_headless(headless=True)
             driver = webdriver.Firefox(firefox_options=options)
 			
+            # non headless with profiles
             #ffprofile = webdriver.FirefoxProfile(profileLoc)
             #driver = webdriver.Firefox(ffprofile)                                  
 			
@@ -114,6 +123,8 @@ def enter_and_parse_url(url):
     return soupURL
 
 def starter():
+    global tsTime
+    tsTime = time.time()
     print ('\n---------------------------------')
     print ('--  Alienware Arena Auto Vote  --')
     print ('--           adi_a12           --')
@@ -127,6 +138,7 @@ def login():
     global user
 
     while not logged:
+        soupLogin = enter_and_parse_url(mainURL + '/login')
         soupLogin = enter_and_parse_url(mainURL + '/login')
 
         input_user = driver.wait.until(EC.presence_of_element_located((By.NAME, '_username')))
@@ -204,38 +216,69 @@ def print_status():
     total_votes1 = int(re.findall('\d+', votes.text)[0])
     total_daily = int(re.findall('\d+', daily.text)[0])
     
-    print('---------- STATUS START ----------')
-    print(time.strftime("Today date %d %B %Y"))
-    print('Username: ' + str(name_detail))
-    print('Your Level: ' + str(level_num))
-    print('Total Arp: ' + str(arpTotal))
-    print('Incomplete Quest: ' + str(quest_num))
-    print('Total Daily Login: ' + str(total_daily))
-    print('Votes cast: ' + str(total_votes1))
+    printLog('---------- STATUS START ----------')
+    printLog(time.strftime("Today date %d %B %Y"))
+    printLog('Username: ' + str(name_detail))
+    printLog('Your Level: ' + str(level_num))
+    printLog('Total Arp: ' + str(arpTotal))
+    printLog('Incomplete Quest: ' + str(quest_num))
+    printLog('Total Daily Login: ' + str(total_daily))
+    printLog('Votes cast: ' + str(total_votes1))
     if counterPS == 0 :
 	    oldARP = arpTotal
 	    counterPS += 1
-    elif oldARP != arpTotal  : print('ARP Change: ' + str(int(arpTotal) - int(oldARP)))
-    print('----------  STATUS END  ----------\n')
+    elif oldARP != arpTotal  : printLog('ARP Change: ' + str(int(arpTotal) - int(oldARP)))
+    printLog('----------  STATUS END  ----------')
+    teTime = time.time() - tsTime
+    printLog("Elapsed time: " + str(teTime) + "sec")
+
+def header():
+    with open(nFile,'w') as file:
+        print('<?xml version="1.0" encoding="ISO-8859-1"?>',file=file)
+        print('<rss version="2.0">',file=file)
+        print('<channel>',file=file)
+        print('<title>AWAAV Log</title>',file=file)
+        print('<description>A simple RSS working as a log of AWAAV</description>',file=file)
+        print('<item>',file=file)
+        print('<title>Executed at', nTime, '</title>', file=file)
+        print('<description>',file=file)
+        print('<![CDATA[<table border=0>',file=file)
+
+def footer():
+    with open(nFile,'a') as file:
+        print('</table>]]>',file=file)
+        print('</description>',file=file)
+        print('</item>',file=file)
+        print('</channel>',file=file)
+        print('</rss>',file=file)
+
+def printLog(*args, **kwargs):
+    print(*args, **kwargs)
+    with open(nFile,'a') as file:
+        print("<tr><td>", file=file)
+        print(*args, **kwargs, file=file)
+        print("</td></tr>", file=file)
 
 # ---------- MAIN ----------
 if __name__ == '__main__':
     try:
         starter()
         parse_arguments()
+        header()
         init_driver()
         login()
         print_status()
         #vote_on_content()
             
     except TimeoutException:
-        print('Error: Element could not be found due to load time limit reached')
+        printLog('Error: Element could not be found due to load time limit reached')
     except SystemExit:
         pass
     except BaseException as e:
-        print('Something went wrong: ' + str(e))
+        printLog('Something went wrong: ' + str(e))
     finally:
         print('Exiting, bye~~~♪\n\n\n')
+        footer()
 
     if driver is not None:
             driver.quit()

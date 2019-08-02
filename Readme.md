@@ -10,7 +10,6 @@ Thank you. 💖
 ## ⏩What you need                        
 - Python 3; https://www.python.org/downloads/           
 - Download 1 of the browser driver, firefox or chrome;                  
-  - Chrome Driver; https://sites.google.com/a/chromium.org/chromedriver/downloads (OR)                
   - Firefox (Gecko) Driver; https://github.com/mozilla/geckodriver/releases                
 - Selenium module for python3;             
 - BeautifulSoup4 module for python3;         

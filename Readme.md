@@ -1,7 +1,5 @@
 [![flag2](https://s05.flagcounter.com/mini/QkT3ad/bg_FFFFFF/txt_000000/border_CCCCCC/flags_0)](http://bit.ly/QkT3ad) | [![flag](https://s04.flagcounter.com/mini/XVpR/bg_FFFFFF/txt_000000/border_CCCCCC/flags_0/)](https://info.flagcounter.com/XVpR)
-# DEPRECATED (DIDNT WORK)
-
-# ✔️AWAAV (Alienware Arena Auto Vote) 
+# ✔️AWAAV (Alienware Arena Auto Vote) Firefox Only
 This are my private script only for me, but you are welcome to try using this script.                 
 Thank you. 💖
 
@@ -51,18 +49,17 @@ Thank you. 💖
 
 ## ⏩How to use the script                          
 parameter:
-1. --driver (chrome or firefox)                   
+1. --driver (firefox)                   
 2. --username --password (fill your username and password)                    
-3. --max-pages (The maximum topic pages to crawl into on a topic pages)                    
+                   
 
 open command prompt/cmd/terminal, and type this                           
 ```                 
-python <path to your script>\awaav.py --driver <driver> --max-pages <total page to crawl> --username <yourusername> --password <yourpassword>          
+python <path to your script>\awaav.py --driver <driver> --username <yourusername> --password <yourpassword>          
 ```                 
 **example:**
 ```
-python "C:\Program Files\Python\Python36-32\awaav.py" --driver firefox --max-pages 15 --username myusername --password myusername123     
-python "C:\Program Files\Python\Python36-32\awaav.py" --driver chrome --max-pages 15 --username myusername --password myusername123       
+python "C:\Program Files\Python\Python36-32\awaav.py" --driver firefox --username myusername --password myusername123         
 ```
 
 

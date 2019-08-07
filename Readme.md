@@ -1,15 +1,17 @@
 [![flag2](https://s05.flagcounter.com/mini/QkT3ad/bg_FFFFFF/txt_000000/border_CCCCCC/flags_0)](http://bit.ly/QkT3ad) | [![flag](https://s04.flagcounter.com/mini/XVpR/bg_FFFFFF/txt_000000/border_CCCCCC/flags_0/)](https://info.flagcounter.com/XVpR)
-# ✔️AWAAV (Alienware Arena Auto Vote) Firefox Only
+# ✔️AWAAV (Alienware Arena Auto Vote)
 This are my private script only for me, but you are welcome to try using this script.                 
 Thank you. 💖
 
 ## ⚠️Note:                         
-*Use it on your own risk, i'm not responsible for anything that will happen for using this script.*            
+*Use it on your own risk, i'm not responsible for anything that will happen for using this script.*
+Not tested on chrome for this version            
 
 
 ## ⏩What you need                        
 - Python 3; https://www.python.org/downloads/           
-- Download 1 of the browser driver, firefox or chrome;                  
+- Download 1 of the browser driver, firefox or chrome;
+  - Chrome Driver; https://sites.google.com/a/chromium.org/chromedriver/downloads (OR)
   - Firefox (Gecko) Driver; https://github.com/mozilla/geckodriver/releases                
 - Selenium module for python3;             
 - BeautifulSoup4 module for python3;         
@@ -48,7 +50,7 @@ Thank you. 💖
 
 ## ⏩How to use the script                          
 parameter:
-1. --driver (firefox)                   
+1. --driver (chrome or firefox)                   
 2. --username --password (fill your username and password)                    
                    
 

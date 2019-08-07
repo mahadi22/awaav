@@ -1,4 +1,4 @@
-#version = 1.1.1.6
+#version = 1.1.3.1
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -6,20 +6,17 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup
-import argparse, re, time, getpass, sys, os
+import argparse, re, time, getpass, sys, inspect, os
 
 os.system('cls')  # clear screen
 
-# Main url and the regular expression to match against it.
-# The subdomain can change according to region, and could be:
-# my.alienwarearena.com, uk.alienwarearena.com, latam.alienwarearena.com etc
 mainURL = 'https://www.alienwarearena.com'
 mainURLRegex = 'https:\/\/(\S+)\.alienwarearena\.com\/'
 
 # parsed main args and the driver that will emulate user interactions in the browser
 args = driver = options = None
 
-tsTime = teTime = oldARP = votesToday = counterPS = total_votes = 0
+tsTime = teTime = votesToday = counterPS = total_votes = arpTotal = 0
 nTime = time.strftime("%a, %d %b %Y %H:%M:%S %z")
 tsTime = time.time()
 
@@ -49,7 +46,6 @@ def parse_arguments():
     parser.add_argument('--username', type=str, help='Login username')
     parser.add_argument('--password', type=str, help='Login password')
     parser.add_argument('--driver', type=checkDriver, help='The driver to be used: \'chrome\'(default) or \'firefox\'')
-    parser.add_argument('--max-pages', type=checkUnsignedInt, help='The maximum topic pages to crawl into before jump to next topic')
 
     global args
     args = parser.parse_args()
@@ -73,7 +69,16 @@ def init_driver():
     if driver is None:
         if 'chromedriver.exe' not in dir_files:
             raise Exception('Chrome driver not found, place it on same folder with this script')
-        driver = webdriver.Chrome()   
+        options = webdriver.ChromeOptions()
+        #options.add_argument("--headless")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--no-sandbox")
+        driver = webdriver.Chrome(options=options)
+    
+    #if driver is None:
+        #if 'chromedriver.exe' not in dir_files:
+            #raise Exception('Chrome driver not found, place it on same folder with this script')
+        #driver = webdriver.Chrome()   
 
     driver.wait = WebDriverWait(driver, 30) # wait object that waits (you don't say?) for elements to appear
     
@@ -92,7 +97,9 @@ def enter_and_parse_url(url, printS):
         if tries > 3:
             raise Exception('Too many times trying to access URL ' + url)
 
-        if printS == 1 : print('Going to ' + url + '\n')
+        if printS == 1 : 
+            sys.stdout.write('Going to ' + url)
+            sys.stdout.flush()
         driver.get(url)
         soupURL = BeautifulSoup(driver.page_source, 'html.parser')
 
@@ -100,6 +107,9 @@ def enter_and_parse_url(url, printS):
             print('Page Not Found ' + url + '. Trying again...\n')
         else:
             success = True
+            if printS == 1 : 
+                sys.stdout.write(", loaded \n")
+                sys.stdout.flush()
 
         tries += 1
 
@@ -113,17 +123,16 @@ def starter():
 	
 def login():
     logged = False
-    global user
+    global user, soupLogin
     errorLogin = 0
 
-    print('Logging in~~~♫')
+    print('Logging in')
 
     while not logged:
         while errorLogin < 1 : 
             soupLogin = enter_and_parse_url(mainURL + '/login', 1)
             loginError = soupLogin.find_all('input', id='_username')
             errorLogin = len(loginError)
-
 
         input_user = driver.wait.until(EC.presence_of_element_located((By.NAME, '_username')))
         input_pass = driver.wait.until(EC.presence_of_element_located((By.NAME, '_password')))
@@ -135,7 +144,6 @@ def login():
             user = input('Username: ')
         
         password = ''
-
         if args.password:
             password = args.password
         else:
@@ -149,7 +157,8 @@ def login():
         # element of the main page is present by setting a timer, so then we know we're logged in
         if driver.name == 'firefox':
             try:
-                WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CLASS_NAME, 'toast-header')))
+                #WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'toast-header')))
+                driver.wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'toast-header')))
                 logged = True
             except TimeoutException:
                 print('!-- Wrong user/pass or site error --!\n')
@@ -163,13 +172,15 @@ def login():
                 print('!-- Wrong user/pass or site error --!\n')                   
 
     print('User logged in successfully\n')
-   
-def print_status():
-    global votesToday, counterPS, total_votes, oldARP
+    soupLogin = BeautifulSoup(driver.page_source, 'html.parser')
 
-    arpTotal = odometer = total_votes = 0
+def print_status():
+    global votesToday, counterPS, total_votes, oldARP, odometer, arpTotal, soupLogin
+    odometer = total_votes = arpTotal = 0
     print('Reading status')
-    soupMain = enter_and_parse_url(mainURL, 1)
+    if counterPS > 0 :
+        soupMain = enter_and_parse_url(mainURL, 1)
+    else: soupMain = soupLogin
 
     userName = soupMain.find(class_='dropdown-header')
     name_detail = re.findall('\w+', userName.text)[0]
@@ -180,27 +191,32 @@ def print_status():
     arp_box = soupMain.find('div', id='arp-toast')
     arp_rows = arp_box.find_all('tr')
     total_rows = len(arp_rows)
-    
     votes = arp_rows[total_rows - 5].find(class_='text-center')
     daily = arp_rows[total_rows - 6].find(class_='text-center')
     total_votes = int(re.findall('\d+', votes.text)[0])
     total_daily = int(re.findall('\d+', daily.text)[0])
 
-    arp_cols = arp_box.find_all('div', {'class': 'odometer-last-value'})
-    total_cols = len(arp_cols)
-    if total_cols > 0: 
-        while odometer < total_cols :
-            arp_piece = arp_cols[odometer]
-            arpTotal = arpTotal + str(re.findall('\d+', arp_piece.text)[0])
+    arp_cols1 = arp_box.find_all('span', {'class': 'odometer-value'})
+    arp_cols2 = arp_box.find_all('div', {'class': 'odometer-last-value'})
+    total_cols1 = len(arp_cols1)
+    total_cols2 = len(arp_cols2)
+    if total_cols1 > 2 :
+        while odometer < total_cols1 :
+            arp_piece = arp_cols1[odometer]
+            arpTotal = int(str(arpTotal) + str(re.findall('\d+', arp_piece.text)[0]))
+            odometer += 1
+    elif total_cols2 > 2 : 
+        while odometer < total_cols2 :
+            arp_piece = arp_cols2[odometer]
+            arpTotal = int(str(arpTotal) + str(re.findall('\d+', arp_piece.text)[0]))
             odometer += 1
     else :
         soupStatus  = enter_and_parse_url(mainURL + '/member/', 1)
         arp_cols = soupStatus.find(class_='user-arp-total')
-        arpTotal = re.findall('\w+', arp_cols.text)[0]
+        arpTotal = int(re.findall('\w+', arp_cols.text)[0])
 
-    if total_votes < 20 :
-        counterPS = 0
-        oldARP = arpTotal
+    if counterPS < 1 :
+        oldARP = str(arpTotal)
 
     if total_votes == 20 :
         printLog('---------- STATUS START ----------')
@@ -216,6 +232,7 @@ def print_status():
         printLog('----------  STATUS END  ----------')
         teTime = time.time() - tsTime
         printLog("Elapsed time: " + str(teTime) + "sec")
+    elif total_votes < 20 : print("Going to vote a post")
 
 def header():
     with open(nFile,'w') as file:
@@ -255,18 +272,19 @@ def voteLinks():
 		'/forums/board/464/in-game-media-2/',
 		'/forums/board/440/cosplay-1/',
 		'/forums/board/113/off-topic-4/',
-		'/forums/board/458/gaming-news/'
-	]
+		'/forums/board/458/gaming-news/']
 
 	if need_votes > 0 :
 		print ("Voting " + str(need_votes) + " times...")
 		soupSearch = enter_and_parse_url(mainURL + searchLinks[forumNum] + str(linkPage) + '?sort=topic', 1)
 		postList = soupSearch.find_all('a', class_='board-topic-title')
 		postInPage = len(postList)
-		sys.stdout.write("[%s]" % (" " * need_votes)) #
-		sys.stdout.flush() #
-		sys.stdout.write("\b" * (need_votes+1)) #
-		while postInPage > 0 :
+		#votesWidth = need_votes
+		sys.stdout.write("[%s]" % (" " * need_votes)) 
+		sys.stdout.flush() 
+		sys.stdout.write("\b" * (need_votes+1)) 
+		
+		while need_votes > 0 :
 			postIDVote = postList[25-postInPage].get('data-topic-id')
 			postInPage -= 1
 			if need_votes > 0 :
@@ -275,14 +293,19 @@ def voteLinks():
 					need_votes -= 1
 					sys.stdout.write("#")
 					sys.stdout.flush()
+					# votesDone = votesWidth - need_votes
+					# sys.stdout.write("[%s]" % ("#" * votesDone) + str((votesDone)*votesPercent) + "%")
+					# sys.stdout.write("\b" * (votesDone+7))
+					# sys.stdout.flush()
 			
 			if postInPage == 0 and need_votes > 0 :
 				linkPage += 1
-				soupSearch = enter_and_parse_url(mainURL + searchLinks[forumNum] + str(linkPage) + '?sort=topic', 1)
+				soupSearch = enter_and_parse_url(mainURL + searchLinks[forumNum] + str(linkPage) + '?sort=topic', 0)
+				driver.wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'board-topic-title')))
 				postList = soupSearch.find_all('a', class_='board-topic-title')
 				postInPage = len(postList)
 
-		sys.stdout.write("]\n")
+		sys.stdout.write("]100%\n")
 		counterPS += 1
 		print_status()
 	else : print ('No need to vote')
@@ -312,8 +335,9 @@ if __name__ == '__main__':
     except BaseException as e:
         printLog('Something went wrong: ' + str(e))
     finally:
-        print('Exiting, bye~~~♪\n\n')
+        print('Exiting, bye\n\n')
         footer()
+        driver.quit()
 
     if driver is not None:
             driver.quit()

@@ -1,4 +1,4 @@
-#version = 1.1.4.1
+#version = 1.1.4.0
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -12,9 +12,6 @@ os.system('cls')  # clear screen
 
 mainURL = 'https://www.alienwarearena.com'
 mainURLRegex = 'https:\/\/(\S+)\.alienwarearena\.com\/'
-
-# Location to your firefox profile with adblock/ublock on, keep the r in front of address location (r"address")
-profileLoc = (r"C:\Users\xxxx\AppData\Roaming\Mozilla\Firefox\Profiles\xxxxxx.default")
 
 # parsed main args and the driver that will emulate user interactions in the browser
 args = driver = options = None

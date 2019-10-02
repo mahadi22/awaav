@@ -1,4 +1,4 @@
-#version = 1.1.4.0
+#version = 1.1.4.1
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -15,6 +15,9 @@ mainURLRegex = 'https:\/\/(\S+)\.alienwarearena\.com\/'
 
 # parsed main args and the driver that will emulate user interactions in the browser
 args = driver = options = None
+
+# Location to your firefox profile with adblock/ublock/another addon on, keep the r in front of address location (r"address")
+profileLoc = (r"C:\Users\xxxxxx\AppData\Roaming\Mozilla\Firefox\Profiles\xxxxx.default")
 
 tsTime = teTime = votesToday = counterPS = total_votes = arpTotal = 0
 nTime = time.strftime("%a, %d %b %Y %H:%M:%S %z")

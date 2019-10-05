@@ -1,4 +1,4 @@
-#version = 1.1.4.0
+#version = 1.1.4.1
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -62,9 +62,13 @@ def init_driver():
             if 'geckodriver.exe' not in dir_files:
                 raise Exception('Firefox driver not found, place it on same folder with this script')
 
-            options = Options()
-            options.headless = False
-            driver = webdriver.Firefox(options=options)
+            # headless
+            #options = Options()
+            #options.headless = False
+            #driver = webdriver.Firefox(options=options)
+			
+            # non-headless firefox
+            driver = webdriver.Firefox 
 
     if driver is None:
         if 'chromedriver.exe' not in dir_files:

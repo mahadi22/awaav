@@ -1,4 +1,4 @@
-#version = 1.1.4.2
+#version = 1.1.4.2b
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -8,7 +8,10 @@ from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup
 import argparse, re, time, getpass, sys, inspect, os
 
-#os.system('cls')  # clear screen
+os.system('cls')  # clear screen
+
+# Location to your firefox profile for enabling the addon, keep the r in front of address location (r"address")
+profileLoc = (r"C:\Users\xxxxxx\AppData\Roaming\Mozilla\Firefox\Profiles\xxxxx.default")
 
 mainURL = 'https://www.alienwarearena.com'
 mainURLRegex = 'https:\/\/(\S+)\.alienwarearena\.com\/'

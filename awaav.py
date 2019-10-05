@@ -1,4 +1,4 @@
-#version = 1.1.4.1
+#version = 1.1.4.2
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -67,8 +67,9 @@ def init_driver():
             #options.headless = False
             #driver = webdriver.Firefox(options=options)
 			
-            # non-headless firefox
-            driver = webdriver.Firefox 
+            # non headless with profiles
+            ffprofile = webdriver.FirefoxProfile(profileLoc)
+            driver = webdriver.Firefox(ffprofile)  
 
     if driver is None:
         if 'chromedriver.exe' not in dir_files:

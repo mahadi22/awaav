@@ -1,7 +1,7 @@
 [![flag2](https://s05.flagcounter.com/mini/QkT3ad/bg_FFFFFF/txt_000000/border_CCCCCC/flags_0)](http://bit.ly/QkT3ad) | [![flag](https://s04.flagcounter.com/mini/XVpR/bg_FFFFFF/txt_000000/border_CCCCCC/flags_0/)](https://info.flagcounter.com/XVpR)
 # ✔️~~AWAAV (Alienware Arena Auto Vote)~~ BROKEN
 ~~This are my private script only for me, but you are welcome to try using this script.                 
-Thank you. 💖~~ Because of new layout of AWA site, this script are broken
+Thank you. 💖~~ Because of new layout of AWA site, this script are broken, right now, i'm still working the workout, bypassing cap tcha using python or switching to php-script
 
 ## ⚠️Note:                         
 *Use it on your own risk, i'm not responsible for anything that will happen for using this script.*

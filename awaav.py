@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-#version = 1.1.4.1
-=======
-#version = 1.1.3.1
->>>>>>> parent of ec1ca74... non headless option
+#version = 1.1.4.0
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -12,16 +8,13 @@ from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup
 import argparse, re, time, getpass, sys, inspect, os
 
-os.system('cls')  # clear screen
+#os.system('cls')  # clear screen
 
 mainURL = 'https://www.alienwarearena.com'
 mainURLRegex = 'https:\/\/(\S+)\.alienwarearena\.com\/'
 
 # parsed main args and the driver that will emulate user interactions in the browser
 args = driver = options = None
-
-# Location to your firefox profile with adblock/ublock/another addon on, keep the r in front of address location (r"address")
-profileLoc = (r"C:\Users\xxxxxx\AppData\Roaming\Mozilla\Firefox\Profiles\xxxxx.default")
 
 tsTime = teTime = votesToday = counterPS = total_votes = arpTotal = 0
 nTime = time.strftime("%a, %d %b %Y %H:%M:%S %z")
@@ -70,7 +63,7 @@ def init_driver():
                 raise Exception('Firefox driver not found, place it on same folder with this script')
 
             options = Options()
-            options.headless = True
+            options.headless = False
             driver = webdriver.Firefox(options=options)
 
     if driver is None:
@@ -165,7 +158,7 @@ def login():
         if driver.name == 'firefox':
             try:
                 #WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'toast-header')))
-                driver.wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'toast-header')))
+                driver.wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'um-arp-total')))
                 logged = True
             except TimeoutException:
                 print('!-- Wrong user/pass or site error --!\n')
@@ -182,6 +175,7 @@ def login():
     soupLogin = BeautifulSoup(driver.page_source, 'html.parser')
 
 def print_status():
+    #New link to check https://www.alienwarearena.com/api/v1/users/arp/status
     global votesToday, counterPS, total_votes, oldARP, odometer, arpTotal, soupLogin
     odometer = total_votes = arpTotal = 0
     print('Reading status')
